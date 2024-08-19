@@ -7,15 +7,15 @@
 #
 # The way I use this is:
 #
-# Targets are shwon with a dashed line, combination above and below that are
-# either side of the target MM pitch or TPI
+# Targets are shown with a dashed line. The combinations above and below that are
+# to either side of the target MM pitch or TPI
 import sys
 
 do_inches = True    # Use TPI instead of mm pitch, different targets for imperial screws.
-ShowTargetsOnly = True # Show only entries either side of a target
+ShowTargetsOnly = True # Show only entries on either side of a target
 KeepDuplicates = False # Show all combinations, even ones with the same ratio
 
-gears_have = [80,80,72,66,60,52,50,      40,33,24,20] # Gears included with vevor lathe
+gears_have = [80,80,72,66,60,52,50,40,33,24,20] # Gears included with vevor lathe
 #gears_have =  [80,80,72,66,60,52,50,49,44,40,33,24,20]  # With extra gears that I made.
 
 # Gears included with vevor lathe plus unique ones from the 27 pc Vevor metal gear set
@@ -31,7 +31,7 @@ else:
 leadscrew_pitch = 2
 
 # My Vevor lathe has five gears that can be swapped.
-# For many lathes, the inermediate post 2 has fixed gearing to the spindle, so
+# For many lathes, the intermediate post 2 has fixed gearing to the spindle, so
 # only gears 0-3 can be changed, but on this one I can swap five gears (0 to 4)
 #
 #  +--+------+
@@ -65,13 +65,13 @@ leadscrew_pitch = 2
 #  +==+
 #
 #  Lead screw gear 0 can be in left or right position
-#  Gears on post 1 (gear 1 and 2) be replaced with one single gear
-#  Gears on post 2 (gear 3 and 4) be replaced with one single gear
+#  Gears on post 1 (gear 1 and 2) can be replaced with one single gear.
+#  Gears on post 2 (gear 3 and 4) can be replaced with one single gear.
 #
 #  To avoid interference:
 #  Teeth2-Teeth1 < Teeth1-20 or gear 2 hits lead screw shaft.
 #  Teeth2-Teeth1+6 > Teeth4-Teeth3 to avoid gear 1 hitting gear 4,
-#             Unless a signle gear is used on post 1 or post 2
+#             unless a single gear is used on post 1 or post 2.
 #  Teeth3 <= Teeth4 to avoid gear 3 hitting the spindle shaft.
 
 
@@ -90,7 +90,7 @@ def check_valid(gears):
 
     if num_used >= 3:
         if gears[2] != gears[1]:
-            if gears[2]-gears[1] > gears[0]-23:
+            if gears[2] - gears[1] > gears[0] - 23:
                 # gear 2 hits the lead screw shaft.
                 return False
         else:
@@ -104,19 +104,19 @@ def check_valid(gears):
             return False
 
         if gears[4] != gears[3] and gears[2] != gears[1]:
-            if gears[2]-gears[1] < gears[4]-gears[3]+6:
+            if gears[2] - gears[1] < gears[4] - gears[3] + 6:
                 # Gear 4 hits gear 1.
                 return False
 
-        width=(gears[0]+gears[1]+gears[2]+gears[3])/2
+        width = (gears[0] + gears[1] + gears[2] + gears[3]) / 2
         if width > 131.5:
-            #print("too wide",gears)
+            #print("too wide", gears)
             return False # Axle spacing is too wide for the mounting bar
         elif width > 105 and gears[4] == 80:
             # If last gear is 80 tooth and higher up than this, the cover won't close.
             return False;
         
-        if width+gears[4]/2 < 138:
+        if width + gears[4] / 2 < 138:
             has_anygear = False
             for g in gears:
                 if g == 1: has_anygear = True
@@ -138,68 +138,66 @@ def pick_gears(gears_have, gears_used, still_add):
     if still_add == 0:
         if not check_valid(gears_used): return
         #print ("Valid:",now_used)
-        gear_ratio = 54.0/gears_used[0]*gears_used[1]/gears_used[2]*gears_used[3]/gears_used[4]
-        pitch = gear_ratio*leadscrew_pitch
+        gear_ratio = 54.0 / gears_used[0] * gears_used[1] / gears_used[2] * gears_used[3] / gears_used[4]
+        pitch = gear_ratio * leadscrew_pitch
 
         gears_str = ""
-        for x in range (0,len(gears_used)):
-            if x == 1 or x == 3: gears_str = gears_str+"  "
+        for x in range (0, len(gears_used)):
+            if x == 1 or x == 3: gears_str = gears_str + "  "
             g = gears_used[x]
             if g == 1:
                 gears_str += "Any,"
             else:
-                gears_str += "%3d,"%(g)
+                gears_str += "%3d," % (g)
 
         # for TPI intead of mm pitch:
         if do_inches:
-           pitch = 25.4/pitch
+           pitch = 25.4 / pitch
 
         global sequence
         sequence += 1;
-        OutStr = "%8.4f,  "%(pitch) +"%5d,"%(sequence) +gears_str
+        OutStr = "%8.4f,  " % (pitch) + "%5d," % (sequence) + gears_str
         #print(OutStr)
         global gear_combos
         gear_combos = gear_combos + [OutStr]
         return
 
-
     if (nused == 1 or nused == 3) and still_add >= 2:
-        # Try Single gear on post, number of teeth doesn't matter.
+        # Try Single gear on post. Number of teeth doesn't matter.
         # We can use any remaining gears, so it doesn't use up a gear.
-        now_used = gears_used+[1,1]
-        pick_gears(gears_have, now_used, still_add-2)
+        now_used = gears_used + [1, 1]
+        pick_gears(gears_have, now_used, still_add - 2)
 
-    for gn in range (0,len(gears_have)):
-        now_used = gears_used+[gears_have[gn]]
-        gears_remaining = gears_have[0:gn] + gears_have[gn+1:]
-        pick_gears(gears_remaining, now_used, still_add-1)
+    for gn in range (0, len(gears_have)):
+        now_used = gears_used + [gears_have[gn]]
+        gears_remaining = gears_have[0:gn] + gears_have[gn + 1:]
+        pick_gears(gears_remaining, now_used, still_add - 1)
 
 gear_combos = []
 sequence = 0;
 
-pick_gears(gears_have, [],5)
+pick_gears(gears_have, [], 5)
 gear_combos.sort()
 
 
 target = targets.pop(0)
 target_index = 0
 
-prev_pitch="0"
+prev_pitch = "0"
 unique_ratios = 0
 
-def ShowGearsEntry(p, target=0):
+def ShowGearsEntry(p, target = 0):
     err_str = ""
     if target:
         pitch = float(p[:8])
-        err = (pitch-target)/target*100
-        err_str = "  E=%6.3f%%"%(err)
+        err = (pitch - target) / target * 100
+        err_str = "  E=%6.3f%%" % (err)
 
-    print (p[:10]+p[17:]+err_str)
-
+    print (p[:10] + p[17:] + err_str)
 
 print ("\nGear threading table, Lead screw gear first, gear engaging spindle last")
 print ("'E=' indicates % error from target pitch value\n")
-for i,g in enumerate(gear_combos):
+for i, g in enumerate(gear_combos):
     if prev_pitch != g[:8] or KeepDuplicates:
         unique_ratios += 1
         prev_pitch = g[:8]
@@ -207,7 +205,7 @@ for i,g in enumerate(gear_combos):
         pitch = float(g[:8])
         if pitch > target:
             if i > 0 and ShowTargetsOnly:
-                ShowGearsEntry(gear_combos[i-1],target)
+                ShowGearsEntry(gear_combos[i - 1], target)
 
             print("--------", target, label, "--------");
 
@@ -223,5 +221,5 @@ for i,g in enumerate(gear_combos):
 
         if not ShowTargetsOnly: ShowGearsEntry(g)
 
-print ("Total gear combinations (including duplicates):",len(gear_combos))
-print ("Total gear ratios:",unique_ratios)
+print ("Total gear combinations (including duplicates):", len(gear_combos))
+print ("Total gear ratios:", unique_ratios)
